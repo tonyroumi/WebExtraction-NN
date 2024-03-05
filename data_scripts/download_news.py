@@ -6,6 +6,7 @@ from bs4 import BeautifulSoup as bs
 import sys
 from PIL import Image
 from io import BytesIO
+from selenium.webdriver.chrome.options import Options
 import requests
 import lxml
 
@@ -26,10 +27,14 @@ def xpath_soup(element):
 # Function to render URLs to file
 def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
     urlIndex = 0
+
     
     # Initialize Selenium WebDriver
-    driver = webdriver.Chrome()
-    driver.set_window_size(1280, 800)
+    chrome_options = Options()
+    chrome_options.add_argument('--headless')
+    chrome_options.add_argument('window-size=1280x800')
+    driver = webdriver.Chrome(options=chrome_options)
+    
     
     # Function to get image path
     def getImagePath(urlIndex):
@@ -52,24 +57,27 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
 
     # Function to retrieve DOM tree
     def getDOMTree():
-        # Use BeautifulSoup to parse the HTML content
-        selected_style_props = ['display','visibility','opacity','z-index','background-image','content','image']
-
         def getElements():
            soup = bs(driver.page_source, 'lxml')
            return soup.find_all()
         
         def createNode(element): #individual element tag and contents
            node = {}
-           node['name'] = element.name
-        #    node.type = 
+           if(element.name == None):
+              node['type'] = 3
+              node['name'] = 'text'
+           else:
+              node['name'] = element.name
+           
+           
            if(element.string != None):
               node['value'] = element.string
+           else:
+              node['value'] = element.text
            xpath = xpath_soup(element)
            driver.implicitly_wait(2)
            try:
             elem = driver.find_element('xpath', xpath)
-
         # Find the corresponding WebDriver element using XPath
 
             computed_style = driver.execute_script('''
@@ -114,13 +122,18 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
         while(len(element_stack) != 0):
            element = element_stack.pop()
            node = createNode(element)
-           if(len(element.contents) != 0 and element.string == None):
+           if(len(element.contents) != 0):
               node['childNodes']= []
               for i in element.contents:
-                 if(i.name is not None): ##does not want to include text nodes
+                 if(i.name is not None): 
                     childNode = processed_stack.pop() 
                     node['childNodes'].insert(0, childNode)
-           processed_stack.append(node)
+                 else:
+                    textNode = createNode(i)
+                    node['childNodes'].insert(0, textNode)
+
+                 
+        #    processed_stack.append(node)
         return processed_stack.pop()
         
            
@@ -131,7 +144,9 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
     def retrieve():
         nonlocal urlIndex
         if (urlIndex < len(urls)):
-            
+             
+             #Possibly add some logic to skip over already downloaded files
+
             url = urls[urlIndex]
             urlIndex += 1
               
@@ -140,7 +155,7 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
               
               # Get paths
             image_path = getImagePath(urlIndex)
-            pageId = getPageID(urlIndex)
+            pageID = getPageID(urlIndex)
             dom_tree_path = getDOMPath(urlIndex)
             html_path = getHTMLPath(urlIndex)
             list_path = getListPath()
@@ -149,21 +164,22 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
                dom_tree = getDOMTree()
                driver.save_screenshot("screenshot.png")
                image = Image.open("screenshot.png")
-               os.makedirs('data_news/images', exist_ok=True)
                image = image.convert("RGB")
                image.save(image_path, format="JPEG", quality=100) 
-               callbackPerUrl("success", url, getPageID(urlIndex), dom_tree_path, html_path, list_path, dom_tree, html_content)         
+               callbackPerUrl("success", url,pageID, dom_tree_path, html_path, list_path, dom_tree, html_content)         
             
             
             except:
-              callbackPerUrl("failure", url, getPageID(urlIndex), dom_tree_path, html_path, list_path, None, None)
+              callbackPerUrl("failure", url, pageID, dom_tree_path, html_path, list_path, None, None)
             retrieve()
         else:
             callbackFinal(driver)
     
     listPath = getListPath()
-    if os.path.exists(listPath):
-      os.remove(listPath)
+    if not os.path.exists(listPath):
+       os.makedirs(listPath)
+   
+        
 
     retrieve()
 
