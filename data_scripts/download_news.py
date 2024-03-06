@@ -9,6 +9,7 @@ from io import BytesIO
 from selenium.webdriver.chrome.options import Options
 import requests
 import lxml
+import random
 
 
 def xpath_soup(element):
@@ -128,17 +129,12 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
                  if(i.name is not None): 
                     childNode = processed_stack.pop() 
                     node['childNodes'].insert(0, childNode)
-                 else:
+                 elif(i.text.strip() and i.text != "\n"):
                     textNode = createNode(i)
                     node['childNodes'].insert(0, textNode)
-
-                 
-        #    processed_stack.append(node)
+           processed_stack.append(node)
         return processed_stack.pop()
-        
-           
-                   
-           
+    
     
     # Function to render next URL
     def retrieve():
@@ -163,9 +159,11 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
                html_content = driver.page_source
                dom_tree = getDOMTree()
                driver.save_screenshot("screenshot.png")
-               image = Image.open("screenshot.png")
-               image = image.convert("RGB")
-               image.save(image_path, format="JPEG", quality=100) 
+               #Include later
+            #    total_height = driver.execute_script("return document.body.scrollHeight")
+            #    random_scroll = random.randint(0, total_height)
+            #    driver.execute_script("window.scrollTo(0, {})".format(random_scroll))
+               Image.open("screenshot.png").convert("RGB").save(image_path, format="JPEG", quality=100)
                callbackPerUrl("success", url,pageID, dom_tree_path, html_path, list_path, dom_tree, html_content)         
             
             
@@ -176,10 +174,8 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
             callbackFinal(driver)
     
     listPath = getListPath()
-    if not os.path.exists(listPath):
-       os.makedirs(listPath)
-   
-        
+    if os.path.exists(listPath):
+      os.remove(listPath)
 
     retrieve()
 
@@ -192,6 +188,8 @@ def callbackPerUrl(status, url, pageID, dom_tree_path, html_path, listPath, dom_
       else:
         with open(listPath, 'a') as f:
           f.write("\n" + pageID + "\t" + url)
+          #Include later
+    #   dom_tree['html']['random_scroll'] = random_scroll
       dom_content = json.dumps(dom_tree, indent=4, default=str)
       with open(dom_tree_path, 'w') as f:
          f.write(dom_content)
@@ -210,8 +208,8 @@ def callbackFinal(driver):
 if __name__ == "__main__":
     if (len(sys.argv) == 2):
         prefix = sys.argv[1]
-        input_path = "data_news/"+prefix+".txt"
-        output_path = "data_news"
+        input_path = "../data_news/sources/"+prefix+".txt"
+        output_path = "../data_news"
     else: 
         print("Usage: python download_news.py TRAININGFILENAME")
         
@@ -224,3 +222,5 @@ if __name__ == "__main__":
 
     # Run rendering
     RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal)
+
+
