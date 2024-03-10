@@ -68,6 +68,9 @@ class DOMTree:
             else:
                 if 'position' in node and ((node['position'][2]-node['position'][0])*(node['position'][3]-node['position'][1]) != 0):
                     res.append(node)
+                #Get parent for multiple nested elements
+                if 'position' in node['parent'] and ((node['parent']['position'][2]-node['parent']['position'][0])*(node['parent']['position'][3]-node['parent']['position'][1]) != 0):
+                    res.append(node['parent'])
         return res
 
     def getPaths(self, node):

@@ -6,7 +6,6 @@ import copy
 import pickle
 import random
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Add the parent directory to sys.path
 sys.path.append(parent_dir)
 from custom_layers.dom_tree import DOMTree
 import matplotlib.pyplot as plt
@@ -16,11 +15,11 @@ FIGURE_WIDTH = 14
 FIGURE_HEIGHT = 10
 MAX_LABELED = 500
 
-DOWNLOADED_PAGES_LIST_PATH = 'data_news/downloaded_pages/'
-LABELED_DOM_PATH =  'data_news/labeled_dom_trees/'
-IMAGES_PATH = 'data_news/images/'
-DOM_PATH = 'data_news/dom_trees/'
-PATHS_PATH = 'data_news/element_paths/'
+DOWNLOADED_PAGES_LIST_PATH = '../data_news/downloaded_pages/'
+LABELED_DOM_PATH =  '../data_news/labeled_dom_trees/'
+IMAGES_PATH = '../data_news/images/'
+DOM_PATH = '../data_news/dom_trees/'
+PATHS_PATH = '../data_news/element_paths/'
 
 #----- CLASS FOR SELECTING A NODE
 class ElementSelector:
@@ -30,22 +29,18 @@ class ElementSelector:
     def __init__(self, image_path, dom_tree):
         self.image_path = image_path
         self.dom_tree = dom_tree
-        self.selected_patches = []
 
     def onPick(self, event):
         # change back old selected page
-        if event.artist in self.selected_patches:
-            self.selected_patches.remove(event.artist)
-            event.artist.set_linewidth(1)
-        else:
-            self.selected_patches.append(event.artist)
-            event.artist.set_linewidth(4)
+        if self.selected_patch:
+            self.selected_patch.set_linewidth(1)
 
-       
+        # new selected patch
+        self.selected_patch = event.artist
 
-        event.artist.figure.canvas.draw()
-
-   
+        # draw
+        self.selected_patch.set_linewidth(4)
+        self.selected_patch.figure.canvas.draw()
 
 
     def keyPress(self, event):
@@ -95,13 +90,11 @@ class ElementSelector:
         self.fig.canvas.mpl_connect('key_press_event', self.keyPress)
         plt.show()
 
-        selected_nodes = [patch.node for patch in self.selected_patches]
-        return selected_nodes
 
-        # if self.selected_patch:
-        #     return self.selected_patch.node
-        # else:
-        #     return None
+        if self.selected_patch:
+            return self.selected_patch.node
+        else:
+            return None
 
 def findAndLabel(page, authorPaths, datePaths, contentPaths):
     # get dom

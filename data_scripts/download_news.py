@@ -11,6 +11,8 @@ import requests
 import lxml
 import random
 
+DOWNLOADED_PAGES_PATH = '../data_news/downloaded_pages/'
+DOM_PATH = '../data_news/dom_trees/'
 
 def xpath_soup(element):
    components = []
@@ -172,10 +174,15 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
             retrieve()
         else:
             callbackFinal(driver)
-    
-    listPath = getListPath()
-    if os.path.exists(listPath):
-      os.remove(listPath)
+
+    #Check to see if pages have already been downloaded
+    pages_path = os.path.join(DOWNLOADED_PAGES_PATH, prefix+'.txt') 
+    with open(pages_path,'r') as f:
+        pages = [line.split('\t')[0] for line in f.readlines()]
+    for page in pages:
+        dom_path = os.path.join(DOM_PATH, page+'.json')
+        if os.path.isfile(dom_path):
+           urlIndex += 1
 
     retrieve()
 
