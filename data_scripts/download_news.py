@@ -142,9 +142,6 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
     def retrieve():
         nonlocal urlIndex
         if (urlIndex < len(urls)):
-             
-             #Possibly add some logic to skip over already downloaded files
-
             url = urls[urlIndex]
             urlIndex += 1
               
@@ -160,12 +157,13 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
             try:
                html_content = driver.page_source
                dom_tree = getDOMTree()
-               driver.save_screenshot("screenshot.png")
+               sc = driver.get_screenshot_as_png()
                #Include later
             #    total_height = driver.execute_script("return document.body.scrollHeight")
             #    random_scroll = random.randint(0, total_height)
             #    driver.execute_script("window.scrollTo(0, {})".format(random_scroll))
-               Image.open("screenshot.png").convert("RGB").save(image_path, format="JPEG", quality=100)
+               Image.open(BytesIO(sc)).resize((1280,800)).convert("RGB").save(image_path, format="JPEG", quality=100)
+
                callbackPerUrl("success", url,pageID, dom_tree_path, html_path, list_path, dom_tree, html_content)         
             
             
@@ -203,7 +201,7 @@ def callbackPerUrl(status, url, pageID, dom_tree_path, html_path, listPath, dom_
       with open(html_path, 'w') as f:
          f.write(html)
     else:
-       print("Unable to render" + url + "OOPS")
+       print("Unable to render: " + url + " OOPS")
        
 
 # Callback function after all URLs have been processed

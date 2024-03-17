@@ -83,11 +83,8 @@ if __name__ == "__main__":
         training = [shops[i] for i in train_index]
         validation = [shops[i] for i in val_index]
 
-       
-  
         createListFile('split_'+str(split_num)+'_train.txt',training)
         createListFile('split_'+str(split_num)+'_val.txt',validation)
-        # create_position_maps(training+validation, split_num)
         
 
         split_num+=1

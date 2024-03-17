@@ -50,9 +50,8 @@ def getLabeledElements(dom_path):
     return results
 
 def getPatch(im, element):
-    pos = element['position']
-    #Image position was found on 1280x800 viewport, but screenshot is 2560x1600
-    position = [x * 2 for x in pos]
+    position = element['position']
+    
     return im[position[1]:position[3],position[0]:position[2],:]
 
 def getLabeledPageList(prefix):

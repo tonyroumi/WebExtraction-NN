@@ -13,12 +13,12 @@ import custom_layers.web_data_utils as data_utils
 from custom_layers.dom_tree import DOMTree
 from tools.utils import *
 
-IMAGES_PATH = 'data_news/images/'
-LABELED_DOM_PATH = 'data_news/labeled_dom_trees/'
-PAGE_SETS_PATH = 'data_news/page_sets/'
-BOXES_PATH = 'data_news/input_boxes/'
-TEXT_MAPS_PATH = 'data_news/text_maps/'
-POS_PATH = 'data_news/position_maps'
+IMAGES_PATH = '../data_news/images/'
+LABELED_DOM_PATH = '../data_news/labeled_dom_trees/'
+PAGE_SETS_PATH = '../data_news/page_sets/'
+BOXES_PATH = '../data_news/input_boxes/'
+TEXT_MAPS_PATH = '../data_news/text_maps/'
+POS_PATH = '../data_news/position_maps'
 
 ### CONSTANTS
 N_FEATURES = 128
@@ -81,11 +81,9 @@ if __name__ == "__main__":
                 label = node['label']
                 ind = label_to_ind[label]
                 position = node['position']
-                position = [x * 2 for x in position]
                 gt_boxes[ind,:] = position
             else:
                 position = node['position']
-                position = [x * 2 for x in position]
                 node['position'] = position
                 other_boxes.append(node['position'])
 
