@@ -3,3 +3,5 @@ data_news
 myenv/
 
 .vscode
+
+*/__pycache__
