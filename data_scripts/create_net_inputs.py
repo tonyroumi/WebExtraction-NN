@@ -1,14 +1,11 @@
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
 import os
 import cv2
 import pickle
 import argparse
 import numpy as np
 import sys
-import pyperclip
-import json
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-# Add the parent directory to sys.path
-sys.path.append(parent_dir)
 import custom_layers.web_data_utils as data_utils
 from custom_layers.dom_tree import DOMTree
 from tools.utils import *
@@ -19,6 +16,8 @@ PAGE_SETS_PATH = '../data_news/page_sets/'
 BOXES_PATH = '../data_news/input_boxes/'
 TEXT_MAPS_PATH = '../data_news/text_maps/'
 POS_PATH = '../data_news/position_maps'
+NEWS_LIST_PATH = '../data_news/news_list.txt'
+
 
 ### CONSTANTS
 N_FEATURES = 128
@@ -40,6 +39,16 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('prefix', type=str, help='PREFIX')
     args = parser.parse_args()
+
+    if os.path.exists(NEWS_LIST_PATH):
+      os.remove(NEWS_LIST_PATH)
+
+    with open(NEWS_LIST_PATH, 'a') as shop_list_file:
+        for filename in os.listdir(PAGE_SETS_PATH):
+            if filename.endswith(".txt"):
+                with open(os.path.join(PAGE_SETS_PATH, filename), 'r') as txt_file:
+                    for line in txt_file:
+                        shop_list_file.write(line)
 
     # create boxes directory if it does not exist
     if not os.path.exists(BOXES_PATH):
@@ -118,6 +127,8 @@ if __name__ == "__main__":
         # pos_path = os.path.join(POS_PATH,page+'.pkl')
         # with open(pos_path,'wb+') as f:    
         #     pickle.dump(pos_map, f)
+
+        
 
 
 

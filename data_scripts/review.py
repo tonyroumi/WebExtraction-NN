@@ -1,8 +1,6 @@
 import os
 import cv2
-import sys
 import json
-import time
 import argparse
 import numpy as np
 import matplotlib.pyplot as plt
@@ -12,6 +10,7 @@ MAX_LINES = 10
 
 FIG_HEIGHT = 8 
 FIG_WIDTH =  8
+
 
 MAX_PATCH_SIZE = 100.0
 
@@ -87,7 +86,7 @@ def preparePatches(prefix):
 
         # prepare paths
         dom_path = os.path.join(DOM_PATH, page+'.json')
-        page_image_path = os.path.join('../data_news/images/', page+'.jpeg')
+        page_image_path = os.path.join('data_news/images/', page+'.jpeg')
         
         # if we have labeled version
         if os.path.isfile(dom_path):
@@ -101,15 +100,16 @@ def preparePatches(prefix):
                 patch = getPatch(im,labeled[label])
                 
                 # # get edge size
-                # edge_size = np.max(patch.shape[:2])
+                edge_size = np.max(patch.shape[:2])
                
                 # # if edge is too big -> update patch
-                # if edge_size>MAX_PATCH_SIZE:
-                #     ratio = MAX_PATCH_SIZE/edge_size
-                #     patch = cv2.resize(patch,(0,0), fx=ratio, fy=ratio, interpolation = cv2.INTER_LINEAR)
+                if edge_size>MAX_PATCH_SIZE:
+                    ratio = MAX_PATCH_SIZE/edge_size
+                    patch = cv2.resize(patch,(0,0), fx=ratio, fy=ratio, interpolation = cv2.INTER_LINEAR)
                     
                 # save
-                cv2.imwrite(os.path.join(PATCHES_PATH, page+'_'+label+'.jpeg'),patch)
+                path = os.path.join(PATCHES_PATH, page+'_'+label+'.jpeg')
+                cv2.imwrite(path,patch)
 
 def onPick(event):
     # # new selected patch

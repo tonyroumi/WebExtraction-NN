@@ -1,9 +1,6 @@
 import os
-from torchvision.io import read_image
 from torch.utils.data import Dataset
 import numpy as np
-from PIL import Image
-import pickle
 import torch
 from data_scripts.data_utils import *
 
@@ -20,7 +17,6 @@ Y_SIZE = 1280
 # (1st element is index of batch images (0,1), other 4 are positions)
 # X[3]: labels_blob
 # Contains tensor form of labels 
-
 # return image, labels
 
 

@@ -5,8 +5,6 @@ import torch.nn.functional as F
 import torch
 
 
-# from sklearn.feature_extraction.text import HashingVectorizer
-
 def preprocess_string(text):
     res = re.sub("[!.;?^*()_{}|]","", text) # remove special characters (we keep characters such as "$" and ",-" )
     res = re.sub("\d+", " ^number^ ", res)   # replace numbers wit special word and space
@@ -52,7 +50,7 @@ def get_text_nodes(leaf_nodes, n_features):
         # if it is text node with value
         if 'type' in node and 'value' in node:
             position = node['position']
-            position = [x * 2 for x in position]
+            
             size = [(position[2]-position[0])*(position[3]-position[1])]
               
             # get text - remove whitespaces, lowercase
@@ -76,7 +74,6 @@ def get_text_maps(text_nodes, n_features, spatial_shape, text_map_scale):
     # for each node in text nodes
     for node in text_nodes:
         bb = node[0]
-        #original images is 2560x1600, but positions were obtained from 1280x800 then stored *2
         bb_scaled = [int(round(x*text_map_scale)) for x in bb]
         encoded_text = node[1]
         encoded_text = (torch.from_numpy(encoded_text)).float()

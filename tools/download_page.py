@@ -8,8 +8,6 @@ from PIL import Image
 from io import BytesIO
 from selenium.webdriver.chrome.options import Options
 import requests
-import lxml
-import random
 
 DOWNLOADED_PAGES_PATH = '../data_news/downloaded_pages/'
 DOM_PATH = '../data_news/dom_trees/'
@@ -38,6 +36,8 @@ def RenderUrl(url, output_path):
     chrome_options = Options()
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('window-size=1280x800')
+    prefs = {"profile.managed_default_content_settings.images": 2}
+    chrome_options.add_experimental_option("prefs", prefs)
     driver = webdriver.Chrome(options=chrome_options)
 
     def saveDomTree(dom_tree_path, dom_tree):
@@ -148,8 +148,9 @@ def RenderUrl(url, output_path):
     if(requests.get(url) == 200):
       print("Success")
       dom_tree = getDOMTree()
-      driver.save_screenshot("screenshot.png")
-      Image.open("screenshot.png").convert("RGB").save(image_path, format="JPEG", quality=100)
+      sc = driver.get_screenshot_as_png()   
+      Image.open(BytesIO(sc)).resize((1280,800)).convert("RGB").save(image_path, format="JPEG", quality=100)
+
       saveDomTree(dom_tree_path, dom_tree)
       driver.quit()
     else:
@@ -161,7 +162,7 @@ if (len(sys.argv) == 3):
   url = sys.argv[1]
   output_path = sys.argv[2]
 else: 
-  print("Usage: python download_news.py TRAININGFILENAME")
+  print("Usage: python download_news.py URL OUTPUT_PATH")
         
     # Run rendering
 RenderUrl(url, output_path)

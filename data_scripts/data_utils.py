@@ -1,18 +1,11 @@
-import os
-import cv2
-import yaml
-import json
-import pickle
-import logging
-import numpy as np
-import sys
-import matplotlib.pyplot as plt
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
+import os
+import cv2
+import pickle
+import numpy as np
+import sys
 from custom_layers.web_data_utils import *
-from multiprocessing import Process, Queue
-import torch.nn as nn
-from PIL import Image
 
 
 
@@ -38,12 +31,10 @@ def tensor_list_to_blob(ims):
 
         blob = np.zeros((max_shape[0], max_shape[0], n_channels),
                     dtype=np.float32)
-
        
         blob[0:ims.shape[0], 0:ims.shape[1], :] = ims
  
-        #need it to be (3,1280,1280)
-        blob = blob.transpose((2, 0, 1))
+        blob = blob.transpose((2, 0, 1)) #(3,1280,1280)
         return blob
 
 

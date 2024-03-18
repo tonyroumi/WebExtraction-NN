@@ -1,8 +1,6 @@
 import os
 import cv2
 import sys
-import json
-import copy
 import pickle
 import random
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -52,8 +50,9 @@ class ElementSelector:
         crop_top = 900
         self.fig = plt.figure(figsize=(FIGURE_WIDTH,FIGURE_HEIGHT))
         im = cv2.imread(self.image_path)
+        im = im[:crop_top,:,:]    
         
-        im = im[:crop_top,:,:]        
+            
 
         plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
 
@@ -65,8 +64,6 @@ class ElementSelector:
         for leafNode in self.dom_tree.getPositionedLeafNodes():
             
             position = leafNode['position']
-
-            # Scale and adjust the coordinates since screenshot taken is fullsize
 
             # text nodes have different color (just for sanity checks)
             patch = plt.Rectangle((position[0], position[1]) ,position[2]-position[0],position[3]-position[1], fill=False, edgecolor='g' if 'type' in leafNode else 'b', linewidth=1, picker=3)

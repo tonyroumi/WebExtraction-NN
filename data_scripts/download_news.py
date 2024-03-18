@@ -7,9 +7,6 @@ import sys
 from PIL import Image
 from io import BytesIO
 from selenium.webdriver.chrome.options import Options
-import requests
-import lxml
-import random
 
 DOWNLOADED_PAGES_PATH = '../data_news/downloaded_pages/'
 DOM_PATH = '../data_news/dom_trees/'
@@ -32,8 +29,15 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
     urlIndex = 0
 
     
-    # Initialize Selenium WebDriver
+    # Initialize Selenium WebDriver, disable popups
     chrome_options = Options()
+    prefs = {
+  "download.default_directory": "./",
+  "credentials_enable_service": False,
+  "profile.password_manager_enabled": False,
+  "excludeSwitches": ["disable-popup-blocking"]
+}
+    chrome_options.add_experimental_option("prefs", prefs)
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('window-size=1280x800')
     driver = webdriver.Chrome(options=chrome_options)
@@ -158,10 +162,6 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
                html_content = driver.page_source
                dom_tree = getDOMTree()
                sc = driver.get_screenshot_as_png()
-               #Include later
-            #    total_height = driver.execute_script("return document.body.scrollHeight")
-            #    random_scroll = random.randint(0, total_height)
-            #    driver.execute_script("window.scrollTo(0, {})".format(random_scroll))
                Image.open(BytesIO(sc)).resize((1280,800)).convert("RGB").save(image_path, format="JPEG", quality=100)
 
                callbackPerUrl("success", url,pageID, dom_tree_path, html_path, list_path, dom_tree, html_content)         
@@ -175,12 +175,13 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
 
     #Check to see if pages have already been downloaded
     pages_path = os.path.join(DOWNLOADED_PAGES_PATH, prefix+'.txt') 
-    with open(pages_path,'r') as f:
-        pages = [line.split('\t')[0] for line in f.readlines()]
-    for page in pages:
-        dom_path = os.path.join(DOM_PATH, page+'.json')
-        if os.path.isfile(dom_path):
-           urlIndex += 1
+    if os.path.exists(pages_path):
+        with open(pages_path,'r') as f:
+            pages = [line.split('\t')[0] for line in f.readlines()]
+        for page in pages:
+            dom_path = os.path.join(DOM_PATH, page+'.json')
+            if os.path.isfile(dom_path):
+                urlIndex += 1
 
     retrieve()
 
@@ -193,8 +194,6 @@ def callbackPerUrl(status, url, pageID, dom_tree_path, html_path, listPath, dom_
       else:
         with open(listPath, 'a') as f:
           f.write("\n" + pageID + "\t" + url)
-          #Include later
-    #   dom_tree['html']['random_scroll'] = random_scroll
       dom_content = json.dumps(dom_tree, indent=4, default=str)
       with open(dom_tree_path, 'w') as f:
          f.write(dom_content)

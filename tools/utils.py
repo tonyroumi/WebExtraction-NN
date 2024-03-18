@@ -3,43 +3,57 @@ import pickle
 import random
 import numpy as np
 import torch.nn.functional as F
-
-from torch.utils.data import DataLoader
-from torch.utils.data import sampler
+import os
+import cv2
+import tempfile
+import subprocess
+import numpy as np
+import matplotlib.pyplot as plt
+from utils import load_position_map
+# from test import  get_probabilities_with_position
+import custom_layers.web_data_utils as data_utils
 import torch
 
 # PATHS
 split_directory = '../data_news/page_sets/splits/'
-boxes_directory = 'data_news/input_boxes/'
+boxes_directory = '../data_news/input_boxes/'
 priors_directory = '../data_news/position_maps/'
 
 # CONSTANTS
-max_x = 1280
-max_y = 1280
+max_x = X_SIZE = 1280
+max_y = Y_SIZE = 1280
+N_FEATURES = 128
+SPATIAL_SHAPE = (Y_SIZE, X_SIZE)
+TEXT_MAP_SCALE = 0.125
+GAUSS_VAR = 80
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 dtype = torch.float32
+CHECKPOINT_DIR = '../models/checkpoint'
 
-def calculate_iou(boxA, boxB):
-    # Determine the (x, y)-coordinates of the intersection rectangle
-    xA = torch.max(boxA[:, 0], boxB[:, 0])
-    yA = torch.max(boxA[:, 1], boxB[:, 1])
-    xB = torch.min(boxA[:, 2], boxB[:, 2])
-    yB = torch.min(boxA[:, 3], boxB[:, 3])
 
-    # Compute the area of intersection rectangle
-    interArea = torch.clamp(xB - xA, min=0) * torch.clamp(yB - yA, min=0)
 
-    # Compute the area of both the prediction and ground-truth rectangles
-    boxAArea = (boxA[:, 2] - boxA[:, 0]) * (boxA[:, 3] - boxA[:, 1])
-    boxBArea = (boxB[:, 2] - boxB[:, 0]) * (boxB[:, 3] - boxB[:, 1])
+def get_preds(prob, boxes):
+    num_correct = 0
+    predicted = prob            
+    # find boxes with highest probability
+    max_boxes = np.argmax(predicted,axis=0)     
+                
+    # GT RESULTS     
+    for cls in range(1,4):
+        ind = max_boxes[cls]
+        winner_prob = predicted[ind,cls]
 
-    # Compute the intersection over union by taking the intersection
-    # area and dividing it by the sum of prediction + ground-truth
-    # areas - the intersection area
-    iou = interArea / (boxAArea + boxBArea - interArea)
-
-    return iou
-
+        if max_boxes[cls]==cls-1:
+            num_correct += 1
+            result = 'Right'
+        else: 
+            result = 'Wrong'
+        
+        print('CLASS ID:'+ str(cls), '('+str(result)+')')
+        print('PROBABILITIES')
+        print('GT: ' + str(predicted[cls-1,cls]) +', winner:' + str(winner_prob))
+    
+    return num_correct
 
 
 def check_accuracy(loader, model):
@@ -50,81 +64,133 @@ def check_accuracy(loader, model):
 
     num_correct = 0
     num_samples = 0
+    num_classes = 3
     model.eval()  # set model to evaluation mode
     with torch.no_grad():
         for x, y in loader:
-            # x = x.to(device=DEVICE, dtype=dtype)  # move to device, e.g. GPU
+            x[0] = x[0].to(device=DEVICE, dtype=dtype)
+            x[1] = x[1].to(device=DEVICE, dtype=dtype)
+            x[2] = x[2].to(device=DEVICE, dtype=dtype)
             y = y.view(-1)
             y = y.to(device=DEVICE, dtype=torch.long)
             scores = model(x)
+            prob = F.softmax(scores)
+            correct = get_preds(prob, x[2].view(200,4))
+            num_correct += correct
+            num_samples += x[0].size(0)
 
-            # Convert scores to bounding box coordinates
-            # Assuming scores shape is [2, 3, 4] (batch_size, num_classes, 4)
-            # Reshape scores to [2*3, 4] for easier computation
-            
+    accuracy = num_correct / (num_samples*num_classes)
+    print('Got %d / %d correct (%.2f)' % (num_correct, (num_samples*num_classes), 100 * accuracy))
 
-            # Assuming y shape is [2, 3, 4] (batch_size, num_classes, 4)
-            # Reshape y to [2*3, 4] for easier computation
-            
-
-            # Calculate Intersection over Union (IoU) for each bounding box
-            iou = calculate_iou(scores, y)
-
-            # If IoU is greater than a certain threshold, consider it correct
-            correct_predictions = (iou > 0.5).sum().item()
-
-            num_correct += correct_predictions
-            num_samples += x.size(0)
-
-    accuracy = num_correct / num_samples
-    print(f'Accuracy: {accuracy * 100:.2f}%')
-
-# def check_accuracy(loader, model):
-#     if loader.dataset.train:
-#         print('Checking accuracy on validation set')
-#     else:
-#         print('Checking accuracy on test set')   
-#     num_correct = 0
-#     num_samples = 0
-#     model.eval()  # set model to evaluation mode
-#     with torch.no_grad():
-#         for x, y in loader:
-#             x = x.to(device=DEVICE, dtype=dtype)  # move to device, e.g. GPU
-#             y = y.to(device=DEVICE, dtype=torch.long)
-#             scores = model(x)
-#             _, preds = scores.max(1)
-#             num_correct += (preds == y).sum()
-#             num_samples += preds.size(0)
-#         acc = float(num_correct) / num_samples
-#         print('Got %d / %d correct (%.2f)' % (num_correct, num_samples, 100 * acc))
-#     return acc
     
+def load_checkpoint(checkpoint, model, optimizer):
+    print("Loading checkpoint")
+    model.load_state_dict(checkpoint['state_dict'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+
+def save_checkpoint(state, filename="model_checkpoint.tar"):
+    print("Saving checkpoint")
+    os.makedirs(CHECKPOINT_DIR, exist_ok=True)  # Create the directory if it doesn't exist
+    checkpoint_path = os.path.join(CHECKPOINT_DIR, filename)
+    torch.save(state, filename)
+
+def download_page(url):
+    print("Downloading:" + str(url))
+    temp_dir = tempfile.mkdtemp()
+    result = subprocess.check_output(["python", "download_page.py",url,temp_dir])
+    return temp_dir
+
+def load_position_maps(position_map_path):
+     #--- LOAD SMOTHED POSITION MAPS
+    position_maps = []
+    for i in range(4):
+        path = os.path.join(position_map_path,str(i)+'.pkl')
+        position_maps.append(load_position_map(path,sigma=80))
+    return position_maps
+
+def load_image_blob(image_path):
+    # load image
+    im = cv2.imread(image_path)
+    size_x = min(im.shape[1],X_SIZE)
+    size_y = min(im.shape[0],Y_SIZE)
+
+    # Crop
+    im_croped = np.zeros((Y_SIZE,X_SIZE,3),dtype=np.uint8)
+    im_croped[:size_y,:size_x,:] = im[:size_y,:size_x,:] 
+
+    n_channels = im.shape[2]
+    im_blob = np.zeros((1, Y_SIZE, X_SIZE, n_channels), dtype=np.float32)
+    im_blob[0, 0:im_croped.shape[0], 0:im_croped.shape[1], :] = im_croped
+    im_blob = im_blob.transpose((2, 0, 1))
+    return im_blob
+
+
+
+def load_text_blob(leaf_nodes):
+    # get text nodes
+    text_nodes = data_utils.get_text_nodes(leaf_nodes,N_FEATURES)
+
+    # get text maps
+    text_maps = data_utils.get_text_maps(text_nodes, N_FEATURES, SPATIAL_SHAPE, TEXT_MAP_SCALE)
+
+    n_channels = text_maps.shape[2]
+    text_blob = np.zeros((1, text_maps.shape[0], text_maps.shape[1], n_channels), dtype=np.float32)
+    text_blob[0, 0:text_maps.shape[0], 0:text_maps.shape[1], :] = text_maps
+    text_blob = text_blob.transpose((0, 3, 1, 2))
+    return text_blob
+
+def load_boxes_blob(leaf_nodes, max_x, max_y):
+    # get input boxes
+    boxes = np.array([leaf['position'] for leaf in leaf_nodes],dtype = np.float32)
+    # remove boxes outside the considered area
+    keep_indices = np.logical_and.reduce(((boxes[:,0]>=0), (boxes[:,1]>=0),(boxes[:,2]<=max_x), (boxes[:,3]<=max_y)))
+    boxes = boxes[keep_indices,:]
+    boxes_this_image = np.hstack((np.zeros((boxes.shape[0], 1)), boxes))
+    return boxes_this_image
+
+
+
+def show(im_blob, boxes_blob, net):
     
+    # colors for particular classes
+    colors = ['r','g','b']
 
-#####--- GET DATA PATHS
+    # get image
+    image = im_blob
+    image = np.squeeze(image[0,:,:,:])
+    image = image/255.0
+    image = np.transpose(image, (1,2,0))
+    image = image[:,:,(2,1,0)]
+    plt.imshow(image)
 
-def get_train_data_path(split_name):
-    return os.path.join(split_directory,'split_'+split_name+'_train.txt')
- 
-def get_val_data_path(split_name):
-    return os.path.join(split_directory,'split_'+split_name+'_val.txt')
+    # get predictions with boxes
+    predicted = net
+    boxes = boxes_blob
 
-def get_result_path(experiment, split_name):
-    results_dir = os.path.join(test_results_directory, experiment)
-    if not os.path.exists(results_dir):
-        os.makedirs(results_dir)  
+    # get probabilities with position likelihoods
+    # probs = get_probabilities_with_position(boxes, predicted, position_maps)
 
-    return os.path.join(results_dir, split_name+'.txt')
+    # compute maximum
+    # box_class = np.argmax(probs,axis=1)
+    max_boxes = np.argmax(predicted,axis=0)
 
-def get_snapshot_name(experiment, split_name, iter):
-    snapshots_dir = os.path.join(snapshots_directory, experiment)
-    if not os.path.exists(snapshots_dir):
-        os.makedirs(snapshots_dir)
+    # draw result
+    for cls in range(1,4):
+        ind = max_boxes[cls]
+        print(predicted[ind])
+    
+        pred_box = boxes[ind,:]
+        rect = plt.Rectangle((pred_box[0], pred_box[1]), pred_box[2] - pred_box[0],
+            pred_box[3] - pred_box[1], fill=True, alpha=0.5,facecolor=colors[cls-1],
+            edgecolor=colors[cls-1], linewidth=3)
+        plt.gca().add_patch(rect)
 
-    return os.path.join(snapshots_dir, 'snapshot_split_'+split_name+'_'+str(iter)+'.caffemodel')
+    plt.show()
 
 
-####---  POSITION MAPS
+
+
+####---  POSITION MAPS (later)
 
 def create_position_maps(train_data, split_name):
     print('Creating and saving position maps')
