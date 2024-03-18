@@ -1,5 +1,7 @@
 import os
 import sys
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
 import utils
 import argparse
 import tempfile
@@ -25,21 +27,26 @@ if __name__ == "__main__":
     url = args.url
 
     # DOWNLOAD PAGE
-    try:
-        download_dir = download_page(url)
-    except subprocess.CalledProcessError:
-        print("Download was not succesfull")
-        sys.exit(1)
+    # try:
+    #     download_dir = download_page(url)
+    # except subprocess.CalledProcessError:
+    #     print("Download was not succesfull")
+    #     sys.exit(1)
 
-    screenshot_path = os.path.join(download_dir,"screenshot.jpeg")
-    dom_path = os.path.join(download_dir,"dom.json")
+    # screenshot_path = os.path.join(download_dir,"screenshot.jpeg")
+    screenshot_path = 'data_news/images/aisnakeoil-000002.jpeg'
+
+    
+    # dom_path = os.path.join(download_dir,"dom.json")
+    dom_path = 'data_news/dom_trees/aisnakeoil-000002.json'
 
     # LOAD POSITION LIKELIHOODS
     # position_maps = load_position_maps(position_map_path)
 
     # LOAD IMAGE BLOB
     im_blob = load_image_blob(screenshot_path)
-    top.append(im_blob)
+    
+    top.append(torch.tensor(im_blob))
 
     ## Make sure net inputs are correct
 
@@ -47,12 +54,16 @@ if __name__ == "__main__":
     dom = DOMTree(dom_path)
     leaf_nodes = dom.getPositionedLeafNodes()
     text_blob = load_text_blob(leaf_nodes)
-    top.append(text_blob)
+    top.append(torch.tensor(text_blob))
     boxes_blob = load_boxes_blob(leaf_nodes,im_blob.shape[3],im_blob.shape[2])
-    top.append(boxes_blob)
+    top.append(torch.tensor(boxes_blob))
     model = SegNet()
     optimizer = optim.SGD(model.parameters())
-    utils.load_checkpoint(torch.load('../models/checkpoint/model_checkpoint.tar'), model=model, optimizer=optimizer)
+    utils.load_checkpoint(torch.load('models/checkpoint/model_checkpoint.tar'), model=model, optimizer=optimizer)
+    model.eval()
     #Net forward
-    scores = model(top)
-    show(im_blob, boxes_blob, scores)
+    with torch.no_grad():
+        scores = model(top)
+        prob = F.softmax(scores)
+
+    show(screenshot_path, boxes_blob, prob)

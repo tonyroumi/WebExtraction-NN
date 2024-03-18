@@ -9,15 +9,16 @@ import tempfile
 import subprocess
 import numpy as np
 import matplotlib.pyplot as plt
-from utils import load_position_map
+# from utils import load_position_map
 # from test import  get_probabilities_with_position
 import custom_layers.web_data_utils as data_utils
 import torch
 
 # PATHS
-split_directory = '../data_news/page_sets/splits/'
-boxes_directory = '../data_news/input_boxes/'
-priors_directory = '../data_news/position_maps/'
+split_directory = 'data_news/page_sets/splits/'
+boxes_directory = 'data_news/input_boxes/'
+priors_directory = 'data_news/position_maps/'
+
 
 # CONSTANTS
 max_x = X_SIZE = 1280
@@ -32,7 +33,7 @@ CHECKPOINT_DIR = '../models/checkpoint'
 
 
 
-def get_preds(prob, boxes):
+def get_preds(prob):
     num_correct = 0
     predicted = prob            
     # find boxes with highest probability
@@ -75,7 +76,7 @@ def check_accuracy(loader, model):
             y = y.to(device=DEVICE, dtype=torch.long)
             scores = model(x)
             prob = F.softmax(scores)
-            correct = get_preds(prob, x[2].view(200,4))
+            correct = get_preds(prob)
             num_correct += correct
             num_samples += x[0].size(0)
 
@@ -92,12 +93,12 @@ def save_checkpoint(state, filename="model_checkpoint.tar"):
     print("Saving checkpoint")
     os.makedirs(CHECKPOINT_DIR, exist_ok=True)  # Create the directory if it doesn't exist
     checkpoint_path = os.path.join(CHECKPOINT_DIR, filename)
-    torch.save(state, filename)
+    torch.save(state, checkpoint_path)
 
 def download_page(url):
-    print("Downloading:" + str(url))
+    print("Downloading: " + str(url))
     temp_dir = tempfile.mkdtemp()
-    result = subprocess.check_output(["python", "download_page.py",url,temp_dir])
+    result = subprocess.run(['python', 'download_page.py',url,temp_dir], check=True)
     return temp_dir
 
 def load_position_maps(position_map_path):
@@ -121,7 +122,7 @@ def load_image_blob(image_path):
     n_channels = im.shape[2]
     im_blob = np.zeros((1, Y_SIZE, X_SIZE, n_channels), dtype=np.float32)
     im_blob[0, 0:im_croped.shape[0], 0:im_croped.shape[1], :] = im_croped
-    im_blob = im_blob.transpose((2, 0, 1))
+    im_blob = im_blob.transpose((0, 3, 1, 2))
     return im_blob
 
 
@@ -145,23 +146,19 @@ def load_boxes_blob(leaf_nodes, max_x, max_y):
     # remove boxes outside the considered area
     keep_indices = np.logical_and.reduce(((boxes[:,0]>=0), (boxes[:,1]>=0),(boxes[:,2]<=max_x), (boxes[:,3]<=max_y)))
     boxes = boxes[keep_indices,:]
-    boxes_this_image = np.hstack((np.zeros((boxes.shape[0], 1)), boxes))
+    boxes_this_image = np.hstack((np.zeros((boxes.shape[0], 1)), boxes), dtype=np.float32)
+
     return boxes_this_image
 
 
 
-def show(im_blob, boxes_blob, net):
+def show(im_path, boxes_blob, net):
+    im = cv2.imread(im_path)
+    # im = im[:crop_top,:,:]    
+    plt.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB))
     
     # colors for particular classes
     colors = ['r','g','b']
-
-    # get image
-    image = im_blob
-    image = np.squeeze(image[0,:,:,:])
-    image = image/255.0
-    image = np.transpose(image, (1,2,0))
-    image = image[:,:,(2,1,0)]
-    plt.imshow(image)
 
     # get predictions with boxes
     predicted = net
@@ -180,9 +177,8 @@ def show(im_blob, boxes_blob, net):
         print(predicted[ind])
     
         pred_box = boxes[ind,:]
-        rect = plt.Rectangle((pred_box[0], pred_box[1]), pred_box[2] - pred_box[0],
-            pred_box[3] - pred_box[1], fill=True, alpha=0.5,facecolor=colors[cls-1],
-            edgecolor=colors[cls-1], linewidth=3)
+        _, x1, y1, x2, y2 = pred_box
+        rect = plt.Rectangle((x1, y1), x2 - x1, y2 - y1, fill=True, alpha=0.5, facecolor=colors[cls-1],edgecolor=colors[cls-1], linewidth=3)
         plt.gca().add_patch(rect)
 
     plt.show()

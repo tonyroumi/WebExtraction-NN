@@ -1,11 +1,11 @@
+import os
+import sys
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
-import os
 import cv2
 import pickle
 import argparse
 import numpy as np
-import sys
 import custom_layers.web_data_utils as data_utils
 from custom_layers.dom_tree import DOMTree
 from tools.utils import *
@@ -21,12 +21,8 @@ NEWS_LIST_PATH = '../data_news/news_list.txt'
 
 ### CONSTANTS
 N_FEATURES = 128
-Y_SIZE = 1280
-X_SIZE = 1280
-SPATIAL_SHAPE = (Y_SIZE, X_SIZE)
-TEXT_MAP_SCALE = 0.125
 
-
+#1280x800
 ### labeled boxes
 label_to_ind = {
     'author' : 0,
@@ -42,6 +38,10 @@ if __name__ == "__main__":
 
     if os.path.exists(NEWS_LIST_PATH):
       os.remove(NEWS_LIST_PATH)
+    
+    # if os.path.exists(PAGE_SETS_PATH):
+    #     os.remove(PAGE_SETS_PATH)
+
 
     with open(NEWS_LIST_PATH, 'a') as shop_list_file:
         for filename in os.listdir(PAGE_SETS_PATH):
@@ -98,7 +98,6 @@ if __name__ == "__main__":
 
 
         text_nodes = data_utils.get_text_nodes(leafNodes,N_FEATURES)
-
        
 
         other_boxes =  np.array(other_boxes,dtype = np.float32)

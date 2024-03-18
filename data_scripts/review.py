@@ -49,9 +49,29 @@ def getLabeledElements(dom_path):
     return results
 
 def getPatch(im, element):
+    #L,T,R,B in pixels 
+
     position = element['position']
+    im_height, im_width, _ = im.shape
+    # patch_top = position[1]  # Ensure top boundary is within image bounds
+    # patch_left = min(im_height, position[0])  # Ensure left boundary is within image bounds
+    # patch_bottom = min(im_height, position[3])  # Ensure bottom boundary is within image bounds
+    # patch_right = min(im_width, position[2])  # Ensure right boundary is within image bounds
     
-    return im[position[1]:position[3],position[0]:position[2],:]
+    # Crop the patch to fit within image bounds
+    # patch_top = min(position[1], im_height)
+    # patch_bottom = min(position[3], im_height)
+    
+    patch_top = max(0,position[1])
+    patch_left = max(0, position[0]) 
+    patch_bottom = min(im_height, position[3])  
+    patch_right = min(im_width, position[2]) 
+
+    cropped_patch = im[patch_top:patch_bottom, patch_left:patch_right, :]
+
+    
+    
+    return cropped_patch
 
 def getLabeledPageList(prefix):
     # load all pages
@@ -86,7 +106,7 @@ def preparePatches(prefix):
 
         # prepare paths
         dom_path = os.path.join(DOM_PATH, page+'.json')
-        page_image_path = os.path.join('data_news/images/', page+'.jpeg')
+        page_image_path = os.path.join('../data_news/images/', page+'.jpeg')
         
         # if we have labeled version
         if os.path.isfile(dom_path):
@@ -100,16 +120,19 @@ def preparePatches(prefix):
                 patch = getPatch(im,labeled[label])
                 
                 # # get edge size
-                edge_size = np.max(patch.shape[:2])
+                # edge_size = np.max(patch.shape[:2])
                
-                # # if edge is too big -> update patch
-                if edge_size>MAX_PATCH_SIZE:
-                    ratio = MAX_PATCH_SIZE/edge_size
-                    patch = cv2.resize(patch,(0,0), fx=ratio, fy=ratio, interpolation = cv2.INTER_LINEAR)
+                # # # if edge is too big -> update patch
+                # if edge_size>MAX_PATCH_SIZE:
+                #     ratio = MAX_PATCH_SIZE/edge_size
+                #     patch = cv2.resize(patch,(0,0), fx=ratio, fy=ratio, interpolation = cv2.INTER_LINEAR)
                     
                 # save
-                path = os.path.join(PATCHES_PATH, page+'_'+label+'.jpeg')
-                cv2.imwrite(path,patch)
+                try:
+                    path = os.path.join(PATCHES_PATH, page+'_'+label+'.jpeg')
+                    cv2.imwrite(path,patch)
+                except:
+                    print("Patch failed for: " + str(page) + " Out of image bounds")
 
 def onPick(event):
     # # new selected patch

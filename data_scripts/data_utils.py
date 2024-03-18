@@ -1,10 +1,10 @@
+import os
+import sys
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
-import os
 import cv2
 import pickle
 import numpy as np
-import sys
 from custom_layers.web_data_utils import *
 
 
@@ -88,7 +88,7 @@ def load_image(filename, train):
     size_x = min(im.shape[1],x_size)
     size_y = min(im.shape[0],y_size)
 
-    # Crop
+    # Crop I wonder if I just keep the size. This aspect ration is 1280x800
     im_croped = np.zeros((y_size,x_size,3),dtype=np.uint8)
     im_croped[:size_y,:size_x,:] = im[:size_y,:size_x,:] 
 

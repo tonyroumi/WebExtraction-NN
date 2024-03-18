@@ -10,7 +10,7 @@ WEIGHTS = torch.tensor([0.1, 10, 10, 10],dtype=dtype)
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
-def get_preds(prob, boxes):
+def get_preds(prob):
     num_correct = 0
     predicted = prob            
     # find boxes with highest probability
@@ -56,11 +56,11 @@ def Evaluate(
             score = model(data)
             prob = F.softmax(score)
             #feed in predictions + bounding box candidates
-            correct = get_preds(prob, data[2].view(200,4))
+            correct = get_preds(prob)
             num_correct += correct
             num_samples += data[0].size(0)
-    accuracy = num_correct / (2*n_class)
-    print('Got %d / %d correct (%.2f)' % (num_correct, (num_samples*n_class), 100 * accuracy))
+    accuracy = num_correct / n_class
+    print('Got %d / %d correct (%.2f)' % (num_correct, (n_class), 100 * accuracy))
 
     return accuracy
 
@@ -74,8 +74,10 @@ def Train(
     test_loader,
     display_interval = 10
 ):
+    
 
     total_prediction = 0
+    iters = 0
     print("Init Model")
     for i in range(epochs):
         print("Epochs: {}".format(i))
@@ -107,19 +109,24 @@ def Train(
             
         total_loss /= len(train_loader)
         model.eval()
+        print("Checking accuracy on validaition set")
         val_accuracy = Evaluate(
             val_loader,
             model
             )
-    
+        total_prediction += test_accuracy
+        iters += 1
+        avg_accuracy = total_prediction/iters
         print("Epoch Loss: {:.4}, Avg Acc: {:.4}".format(
-                total_loss, val_accuracy
+                total_loss, avg_accuracy
             ))
     
     test_accuracy= Evaluate(
         val_loader,
         model,
     )
+    
+
 
     print("Test Acc: {:.4}".format(
             test_accuracy

@@ -1,7 +1,7 @@
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(parent_dir)
 import os
 import sys
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
 import torch
 import torch.optim as optim
 from torch.utils.data import DataLoader
@@ -23,13 +23,13 @@ DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 if __name__ == "__main__":
-    train_ds = CustomDataset(img_path='data_news/images', txt_map_path='data_news/text_maps', boxes_path='data_news/input_boxes', train=True)
-    train_loader = DataLoader(train_ds, batch_size=2,  num_workers=2, sampler=sampler.SubsetRandomSampler(range(16)))
+    train_ds = CustomDataset(img_path='../data_news/images', txt_map_path='../data_news/text_maps', boxes_path='../data_news/input_boxes', train=True)
+    train_loader = DataLoader(train_ds, batch_size=2,  num_workers=2, sampler=sampler.SubsetRandomSampler(range(30)))
 
-    val_ds = CustomDataset(img_path='data_news/images', txt_map_path='data_news/text_maps', boxes_path='data_news/input_boxes', train=True)
-    val_loader = DataLoader(val_ds, batch_size=2, num_workers=2,sampler=sampler.SubsetRandomSampler(range(16,20)))
+    val_ds = CustomDataset(img_path='../data_news/images', txt_map_path='../data_news/text_maps', boxes_path='../data_news/input_boxes', train=True)
+    val_loader = DataLoader(val_ds, batch_size=2, num_workers=2,sampler=sampler.SubsetRandomSampler(range(28,30)))
     
-    test_ds = CustomDataset(img_path='data_news/images', txt_map_path='data_news/text_maps', boxes_path='data_news/input_boxes')
+    test_ds = CustomDataset(img_path='../data_news/images', txt_map_path='../data_news/text_maps', boxes_path='../data_news/input_boxes')
     test_loader = DataLoader(test_ds, batch_size=1, shuffle=False, num_workers=2)
 
     model = SegNet()

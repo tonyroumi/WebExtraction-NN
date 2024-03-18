@@ -31,7 +31,8 @@ class SegNet(nn.Module):
     def forward(self, x):
         txt = x[1]
         boxes = x[2]
-        boxes = self.reshape(boxes)
+        if(boxes.shape[1] != 5):
+            boxes = self.reshape(boxes)
 
         # Convolutional layers
         x = self.lrn_norm(self.pool(self.relu(self.conv1(x[0]))))
@@ -42,7 +43,7 @@ class SegNet(nn.Module):
         x = ops.roi_pool(input=self.relu(self.both_conv(x)), boxes=boxes, output_size=(1,1), spatial_scale=0.125)
         x = self.conv_classifier(x)
         
-        return x.view(200,4)
+        return x.view(-1,4)
 
 
 class ConcatLayer(nn.Module):

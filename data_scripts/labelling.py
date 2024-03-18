@@ -1,10 +1,10 @@
 import os
 import cv2
 import sys
-import pickle
-import random
 parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(parent_dir)
+import pickle
+import random
 from custom_layers.dom_tree import DOMTree
 import matplotlib.pyplot as plt
 
@@ -65,13 +65,16 @@ class ElementSelector:
             
             position = leafNode['position']
 
+            #Position was recorded in 1280x800, for labelling image with be 2560x1600
+            # position = [x * 2 for x in position]
+
             # text nodes have different color (just for sanity checks)
             patch = plt.Rectangle((position[0], position[1]) ,position[2]-position[0],position[3]-position[1], fill=False, edgecolor='g' if 'type' in leafNode else 'b', linewidth=1, picker=3)
 
 
             patch.node = leafNode
 
-            # compute size
+            # compute size R-L*B-T
             size = (position[2]-position[0])*(position[3]-position[1])
             # add to patch list
             patches.append((patch,size))
