@@ -65,9 +65,6 @@ class ElementSelector:
             
             position = leafNode['position']
 
-            #Position was recorded in 1280x800, for labelling image with be 2560x1600
-            # position = [x * 2 for x in position]
-
             # text nodes have different color (just for sanity checks)
             patch = plt.Rectangle((position[0], position[1]) ,position[2]-position[0],position[3]-position[1], fill=False, edgecolor='g' if 'type' in leafNode else 'b', linewidth=1, picker=3)
 
@@ -94,18 +91,18 @@ class ElementSelector:
         else:
             return None
 
-def findAndLabel(page, authorPaths, datePaths, contentPaths):
+def findAndLabel(page, titlePaths, datePaths, contentPaths):
     # get dom
     dom = getPageDOM(page)
 
     # find elements
-    authorElement = dom.getElementByOneOfPaths(authorPaths)
+    titleElement = dom.getElementByOneOfPaths(titlePaths)
     dateElement = dom.getElementByOneOfPaths(datePaths)
     contentElement = dom.getElementByOneOfPaths(contentPaths)
 
     # if we have all elements
-    if authorElement and dateElement and contentElement:
-        authorElement['label'] = 'author'
+    if titleElement and dateElement and contentElement:
+        titleElement['label'] = 'title'
         dateElement['label'] = 'date'
         contentElement['label'] = 'content'
 
@@ -118,21 +115,21 @@ def findAndLabel(page, authorPaths, datePaths, contentPaths):
 
 def loadPaths(prefix):
     print ('Loading paths')
-    authorPaths = []
+    titlePaths = []
     datePaths = []
     contentPaths = []
     path_to_saved_path = os.path.join(PATHS_PATH, prefix+'.pkl')
     if os.path.exists(path_to_saved_path):
         paths = pickle.load(open(path_to_saved_path,'rb'))
-        authorPaths = paths['author']
+        titlePaths = paths['title']
         datePaths = paths['date']
         contentPaths = paths['content']
 
-    return authorPaths, datePaths, contentPaths
+    return titlePaths, datePaths, contentPaths
 
-def savePaths(prefix, authorPaths, datePaths, contentPaths):
+def savePaths(prefix, titlePaths, datePaths, contentPaths):
     paths = {}
-    paths['author'] = authorPaths
+    paths['title'] = titlePaths
     paths['date'] = datePaths
     paths['content'] = contentPaths
 
@@ -172,7 +169,7 @@ def selectNewPaths(image_path, dom):
         return []
 
 
-def getNewPaths(pages, authorPaths, datePaths, contentPaths):
+def getNewPaths(pages, titlePaths, datePaths, contentPaths):
     updatedPath = False
 
     # until we have no updated path
@@ -182,16 +179,16 @@ def getNewPaths(pages, authorPaths, datePaths, contentPaths):
         page_image_path = os.path.join(IMAGES_PATH,random_page+'.jpeg')
         displayQuestion=True
 
-        newAuthorPaths = []
+        newTitlePaths = []
         newDatePaths = []
         newContentPaths = [] 
 
-        # try to get author
-        authorElement = dom.getElementByOneOfPaths(authorPaths)
-        if authorElement is None and displayQuestion:
-            print('Help me to find the author:')
-            newAuthorPaths = selectNewPaths(page_image_path, dom)
-            if len(newAuthorPaths)>0:
+        # try to get title
+        titleElement = dom.getElementByOneOfPaths(titlePaths)
+        if titleElement is None and displayQuestion:
+            print('Help me to find the title:')
+            newTitlePaths = selectNewPaths(page_image_path, dom)
+            if len(newTitlePaths)>0:
                 updatedPath=True
             else:
                 displayQuestion=False
@@ -216,7 +213,7 @@ def getNewPaths(pages, authorPaths, datePaths, contentPaths):
             else:
                 displayQuestion=False
 
-    return newAuthorPaths, newDatePaths, newContentPaths
+    return newTitlePaths, newDatePaths, newContentPaths
 
 
 if __name__ == "__main__":
@@ -240,7 +237,7 @@ if __name__ == "__main__":
         pages = [line.split('\t')[0] for line in f.readlines()]
 
     # try to load paths to elements
-    authorPaths, datePaths, contentPaths = loadPaths(prefix)
+    titlePaths, datePaths, contentPaths = loadPaths(prefix)
     
     # split pages to already labeled or unlabeled
     unlabeledPages = getUnlabeledPages(pages)
@@ -252,17 +249,17 @@ if __name__ == "__main__":
 
         # get new paths
         print('Get new paths')
-        newAuthorPaths, newDatePaths, newContentPaths  = getNewPaths(unlabeledPages, authorPaths, datePaths, contentPaths)
+        newTitlePaths, newDatePaths, newContentPaths  = getNewPaths(unlabeledPages, titlePaths, datePaths, contentPaths)
 
         # update existing paths
         print('Updating paths')
-        authorPaths.extend(newAuthorPaths)
+        titlePaths.extend(newTitlePaths)
         datePaths.extend(newDatePaths)
         contentPaths.extend(newContentPaths)
 
         # save new updated paths
         print('Saving new paths')
-        savePaths(prefix,  authorPaths, datePaths, contentPaths)
+        savePaths(prefix,  titlePaths, datePaths, contentPaths)
 
         # try to annotate page
         print('Annotating other pages')
@@ -271,7 +268,7 @@ if __name__ == "__main__":
         newUnlabeledPages = []
 
         for page in unlabeledPages:
-            success = findAndLabel(page, authorPaths, datePaths, contentPaths)
+            success = findAndLabel(page, titlePaths, datePaths, contentPaths)
             if success:
               print(str(totalLabeledCount) + " " + str(page))
               totalLabeledCount+=1

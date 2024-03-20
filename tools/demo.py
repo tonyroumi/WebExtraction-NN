@@ -27,18 +27,18 @@ if __name__ == "__main__":
     url = args.url
 
     # DOWNLOAD PAGE
-    # try:
-    #     download_dir = download_page(url)
-    # except subprocess.CalledProcessError:
-    #     print("Download was not succesfull")
-    #     sys.exit(1)
+    try:
+        download_dir = download_page(url)
+    except subprocess.CalledProcessError:
+        print("Download was not succesfull")
+        sys.exit(1)
 
-    # screenshot_path = os.path.join(download_dir,"screenshot.jpeg")
-    screenshot_path = 'data_news/images/aisnakeoil-000002.jpeg'
+    screenshot_path = os.path.join(download_dir,"screenshot.jpeg")
+  
 
     
-    # dom_path = os.path.join(download_dir,"dom.json")
-    dom_path = 'data_news/dom_trees/aisnakeoil-000002.json'
+    dom_path = os.path.join(download_dir,"dom.json")
+   
 
     # LOAD POSITION LIKELIHOODS
     # position_maps = load_position_maps(position_map_path)
@@ -55,11 +55,11 @@ if __name__ == "__main__":
     leaf_nodes = dom.getPositionedLeafNodes()
     text_blob = load_text_blob(leaf_nodes)
     top.append(torch.tensor(text_blob))
-    boxes_blob = load_boxes_blob(leaf_nodes,im_blob.shape[3],im_blob.shape[2])
+    boxes_blob = load_boxes_blob(leaf_nodes,im_blob.shape[3],800) #hardcoded 800 becuase images were taken in 1600x800 need to remove outside considered area
     top.append(torch.tensor(boxes_blob))
     model = SegNet()
     optimizer = optim.SGD(model.parameters())
-    utils.load_checkpoint(torch.load('models/checkpoint/model_checkpoint.tar'), model=model, optimizer=optimizer)
+    utils.load_checkpoint(torch.load('../models/checkpoint/model_checkpoint.tar'), model=model, optimizer=optimizer)
     model.eval()
     #Net forward
     with torch.no_grad():

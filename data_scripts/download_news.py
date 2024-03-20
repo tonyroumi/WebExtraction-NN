@@ -7,6 +7,8 @@ import sys
 from PIL import Image
 from io import BytesIO
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+
 
 DOWNLOADED_PAGES_PATH = '../data_news/downloaded_pages/'
 DOM_PATH = '../data_news/dom_trees/'
@@ -29,18 +31,15 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
     urlIndex = 0
 
     
-    # Initialize Selenium WebDriver, disable popups
+    # Initialize Selenium WebDriver, disable popups and images
     chrome_options = Options()
-    prefs = {
-  "download.default_directory": "./",
-  "credentials_enable_service": False,
-  "profile.password_manager_enabled": False,
-  "excludeSwitches": ["disable-popup-blocking"]
-}
-    chrome_options.add_experimental_option("prefs", prefs)
+    chrome_options.add_argument("load-extension=../Extensions/adblock.crx")
+    # chrome_options.add_argument('--blink-settings=imagesEnabled=false')
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('window-size=1280x800')
     driver = webdriver.Chrome(options=chrome_options)
+    
+
     
     
     # Function to get image path
@@ -149,8 +148,7 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
             url = urls[urlIndex]
             urlIndex += 1
               
-            driver.get(url)
-            time.sleep(4) 
+            
               
               # Get paths
             image_path = getImagePath(urlIndex)
@@ -159,6 +157,8 @@ def RenderUrlsToFile(urls, output_path, prefix, callbackPerUrl, callbackFinal):
             html_path = getHTMLPath(urlIndex)
             list_path = getListPath()
             try:
+               driver.get(url)
+               sc = driver.get_screenshot_as_png()
                html_content = driver.page_source
                dom_tree = getDOMTree()
                sc = driver.get_screenshot_as_png()

@@ -14,7 +14,7 @@ FIG_WIDTH =  8
 
 MAX_PATCH_SIZE = 100.0
 
-LABELS = ['author','date','content']
+LABELS = ['title','date','content']
 
 DOM_PATH = '../data_news/labeled_dom_trees/'
 PATCHES_PATH = '../data_news/review_patches/'
@@ -53,15 +53,6 @@ def getPatch(im, element):
 
     position = element['position']
     im_height, im_width, _ = im.shape
-    # patch_top = position[1]  # Ensure top boundary is within image bounds
-    # patch_left = min(im_height, position[0])  # Ensure left boundary is within image bounds
-    # patch_bottom = min(im_height, position[3])  # Ensure bottom boundary is within image bounds
-    # patch_right = min(im_width, position[2])  # Ensure right boundary is within image bounds
-    
-    # Crop the patch to fit within image bounds
-    # patch_top = min(position[1], im_height)
-    # patch_bottom = min(position[3], im_height)
-    
     patch_top = max(0,position[1])
     patch_left = max(0, position[0]) 
     patch_bottom = min(im_height, position[3])  

@@ -92,7 +92,8 @@ def load_image(filename, train):
     im_croped = np.zeros((y_size,x_size,3),dtype=np.uint8)
     im_croped[:size_y,:size_x,:] = im[:size_y,:size_x,:] 
 
-    if train == 'TRAIN':
+    if train == True:
+        #Pre-processing data
         # Change HUE randomly
         hue_ratio = 0.4
         if np.random.uniform() < hue_ratio:

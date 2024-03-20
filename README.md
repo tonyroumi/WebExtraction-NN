@@ -5,7 +5,5 @@ This was inspired by Tomas Gogar(B), Ondrej Hubacek, and Jan Sedivy, reimplement
 https://link.springer.com/content/pdf/10.1007/978-3-319-44944-9_14.pdf
 
 ## Overview
-In the realm of web automation, building and maintaining web scrapers is a tedious task. The dynamic nature of the web necessitates constant adjustments to scraper algorithms, often requiring human intervention. Scalability is also a significant challenge.
-
-This project seeks to address these challenges by leveraging machine learning techniques, specifically neural networks, to automate and optimize the web extraction processes. By training a neural network model on a diverse dataset of web content, I aim to create robust and dynamic scrapers capable of handling various websites and adapting to changes over time.
+In the realm of web extraction, web scrapers are custom scripts built for a particular website. They rely heavily on the structure of the web page and patterns within the HTML to be able to dynamically scrape desired information. In this project I present a method to extract information from any web page using a deep convolutional network. I utilize images of web pages and information from their corresponding HTML documents to train a network to identify class elements from new, unseen pages. I use beautiful soup and selenium to obtiain dataset. In this project I combine textual data with visual data and methods for computer vision to create a robust, dynamic web scraper.
 

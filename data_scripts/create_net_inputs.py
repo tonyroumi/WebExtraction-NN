@@ -25,7 +25,7 @@ N_FEATURES = 128
 #1280x800
 ### labeled boxes
 label_to_ind = {
-    'author' : 0,
+    'title' : 0,
     'date' : 1,
     'content' : 2        
 }
@@ -42,13 +42,18 @@ if __name__ == "__main__":
     # if os.path.exists(PAGE_SETS_PATH):
     #     os.remove(PAGE_SETS_PATH)
 
-
     with open(NEWS_LIST_PATH, 'a') as shop_list_file:
         for filename in os.listdir(PAGE_SETS_PATH):
             if filename.endswith(".txt"):
                 with open(os.path.join(PAGE_SETS_PATH, filename), 'r') as txt_file:
                     for line in txt_file:
                         shop_list_file.write(line)
+    
+    if not os.path.exists(POS_PATH):
+        os.makedirs(POS_PATH)
+
+    # create position maps
+    # create_position_maps(NEWS_LIST_PATH)
 
     # create boxes directory if it does not exist
     if not os.path.exists(BOXES_PATH):
@@ -105,7 +110,7 @@ if __name__ == "__main__":
         #-- SAVE BOXES
         box_obj = {}
         box_obj['other_boxes'] = other_boxes #other leaf nodes positions 
-        box_obj['gt_boxes'] = gt_boxes #ground truth positions for classification 0: author, 1: date, 2: content
+        box_obj['gt_boxes'] = gt_boxes #ground truth positions for classification 0: title, 1: date, 2: content
         box_path = os.path.join(BOXES_PATH,page+'.pkl')
         with open(box_path,'wb+') as f:    
             pickle.dump(box_obj, f)
@@ -120,6 +125,7 @@ if __name__ == "__main__":
         txt_path = os.path.join(TEXT_MAPS_PATH,page+'.pkl')
         with open(txt_path,'wb+') as f:    
             pickle.dump(txt_obj, f)
+
 
        #--SAVE POSITION MAP
         # pos_map = create_position_maps(page)

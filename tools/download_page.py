@@ -32,12 +32,12 @@ def RenderUrl(url, output_path):
     urlIndex = 0
 
     
-    # Initialize Selenium WebDriver
+    # Initialize Selenium WebDriver with adblocker and don't allow images
     chrome_options = Options()
+    chrome_options.add_argument("load-extension=../Extensions/adblock.crx")
+   #  chrome_options.add_argument('--blink-settings=imagesEnabled=false')
     chrome_options.add_argument('--headless')
     chrome_options.add_argument('window-size=1280x800')
-   #  prefs = {"profile.managed_default_content_settings.images": 2}
-   #  chrome_options.add_experimental_option("prefs", prefs)
     driver = webdriver.Chrome(options=chrome_options)
 
     def saveDomTree(dom_tree_path, dom_tree):
@@ -53,7 +53,7 @@ def RenderUrl(url, output_path):
 
     # Function to get DOM path
     def getDOMPath(output_path):
-        return os.path.join(output_path, "dom.jsom")
+        return os.path.join(output_path, "dom.json")
 
     # Function to retrieve DOM tree
     def getDOMTree():
