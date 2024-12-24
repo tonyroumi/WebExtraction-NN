@@ -1,5 +1,5 @@
 # Neural network for Web Extraction
-This project utilizes a neaural network to facilitate web extraction tasks.
+This project utilizes a neural network to facilitate web extraction tasks.
 
 This was inspired by Tomas Gogar(B), Ondrej Hubacek, and Jan Sedivy, reimplemented in PyTorchfor article extraction.
 https://link.springer.com/content/pdf/10.1007/978-3-319-44944-9_14.pdf
